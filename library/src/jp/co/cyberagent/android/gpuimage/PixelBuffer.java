@@ -193,13 +193,23 @@ public class PixelBuffer {
         IntBuffer ib = IntBuffer.allocate(mWidth * mHeight);
         mGL.glReadPixels(0, 0, mWidth, mHeight, GL_RGBA, GL_UNSIGNED_BYTE, ib);
 
+        int[] ia = ib.array();
+        int count = ia.length;
+        int lines = mHeight / 2;
+
+        // Convert upside down mirror-reversed image to right-side up normal image.
+        for (int i = 0; i < lines; i++) {
+            for (int j = 0, base = i * mWidth; j < mWidth; j++) {
+                int pos1 = base + j; // i * mWidth + j
+                int pos2 = count - base - mWidth + j; // (mHeight - i - 1) * mWidth + j;
+                // swap data
+                int temp = ia[pos1];
+                ia[pos1] = ia[pos2];
+                ia[pos2] = temp;
+            }
+        }
+
         mBitmap = Bitmap.createBitmap(mWidth, mHeight, Bitmap.Config.ARGB_8888);
         mBitmap.copyPixelsFromBuffer(ib);
-
-        // Convert upside down mirror-reversed image to right-side up normal
-        // image.
-        Matrix matrix = new Matrix();
-        matrix.preScale(1.0f, -1.0f);
-        mBitmap = Bitmap.createBitmap(mBitmap, 0, 0, mWidth, mHeight, matrix, false);
     }
 }
